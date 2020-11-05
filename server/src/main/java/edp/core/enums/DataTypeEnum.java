@@ -44,7 +44,7 @@ public enum DataTypeEnum {
 
     CASSANDRA("cassandra", "cassandra", "com.github.adejanovski.cassandra.jdbc.CassandraDriver", "", "", "'", "'"),
 
-    CLICKHOUSE("clickhouse", "clickhouse", "ru.yandex.clickhouse.ClickHouseDriver", "", "", "\"", "\""),
+    CLICKHOUSE("clickhouse", "clickhouse", "ru.yandex.clickhouse.ClickHouseDriver", "`", "`", "`", "`"),
 
     KYLIN("kylin", "kylin", "org.apache.kylin.jdbc.Driver", "\"", "\"", "\"", "\""),
 
@@ -54,7 +54,10 @@ public enum DataTypeEnum {
 
     IMPALA("impala", "impala", "com.cloudera.impala.jdbc41.Driver", "", "", "'", "'"),
 
-    TDENGINE("TAOS", "TAOS", "com.taosdata.jdbc.TSDBDriver", "'", "'", "\"", "\"");
+    INFORMIX("informix-sqli", "informix", "com.informix.jdbc.IfxDriver", "\"", "\"", "\"", "\""),
+
+    DB2("db2", "db2", "com.ibm.db2.jcc.DB2Driver", "", "", "", "");
+
 
     private String feature;
     private String desc;
