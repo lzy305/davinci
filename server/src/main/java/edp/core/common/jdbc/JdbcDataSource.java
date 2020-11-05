@@ -351,8 +351,11 @@ public class JdbcDataSource {
                     || driverName.indexOf("h2") != -1 || driverName.indexOf("moonbox") != -1) {
                 druidDataSource.setValidationQuery("select 1");
             }
-
-            if (driverName.indexOf("oracle") != -1) {
+            if (driverName.indexOf("db2") !=-1) {
+                druidDataSource.setValidationQuery("select 1 from sysibm.sysdummy1");
+            }
+            if (driverName.indexOf("oracle") != -1 || driverName.indexOf("informix") != -1
+                    || driverName.indexOf("informix-sqli") != -1) {
                 druidDataSource.setValidationQuery("select 1 from dual");
             }
 
