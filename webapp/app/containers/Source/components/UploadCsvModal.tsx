@@ -102,7 +102,7 @@ const UploadCsvModal: React.FC<IUploadCsvModalProps> = (props) => {
 
   return (
     <Modal
-      title="上传 CSV 文件"
+      title="上传文件"
       visible={visible}
       maskClosable={false}
       afterClose={resetFields}
@@ -111,46 +111,19 @@ const UploadCsvModal: React.FC<IUploadCsvModalProps> = (props) => {
       onCancel={onCancel}
     >
       <Form>
-        <FormItem label="表名" {...formItemLayout}>
-          {getFieldDecorator<ICSVMetaInfo>('tableName', {
-            rules: [
-              {
-                required: true,
-                message: '表名不能为空'
-              },
-              {
-                validator: validateTableName
-              }
-            ],
-            validateFirst: true,
-            validateTrigger: ''
-          })(<Input />)}
-        </FormItem>
-        <FormItem label="主键" {...formItemLayout}>
-          {getFieldDecorator<ICSVMetaInfo>('primaryKeys', {})(<Input />)}
-        </FormItem>
-        <FormItem label="索引键" {...formItemLayout}>
-          {getFieldDecorator<ICSVMetaInfo>('indexKeys', {})(<Input />)}
-        </FormItem>
         <FormItem label="导入方式" {...formItemLayout}>
           {getFieldDecorator<ICSVMetaInfo>('mode', {
             initialValue: 0
           })(
             <RadioGroup>
-              <Radio value={0}>新增</Radio>
-              <Radio value={1}>替换</Radio>
-              <Radio value={2}>追加</Radio>
-              <Radio value={3}>覆盖</Radio>
+              <Radio value={0}>更新</Radio>
             </RadioGroup>
           )}
           <Popover
             placement="right"
             content={
               <>
-                <p>新增：首次上传文件到新表</p>
-                <p>替换：保持原有表结构不变，清空原有表数据后上传</p>
-                <p>追加：保持原有表结构不变，保持原有表数据并追加</p>
-                <p>覆盖：重建表结构并替换数据</p>
+                <p>更新：根据设置的主键,若历史存在,则先删除历史再导入本次数据; 若历史不存在,则直接导入本次数据</p>
               </>
             }
           >
@@ -159,14 +132,14 @@ const UploadCsvModal: React.FC<IUploadCsvModalProps> = (props) => {
         </FormItem>
         <FormItem label="上传" {...formItemLayout}>
           <Upload
-            accept=".csv"
+            accept=".xlsx"
             multiple={false}
             fileList={files}
             beforeUpload={preventUpload}
           >
             <Button>
               <Icon type="upload" />
-              Click to Upload CSV
+             上传文件
             </Button>
           </Upload>
         </FormItem>

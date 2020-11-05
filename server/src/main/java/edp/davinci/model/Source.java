@@ -199,5 +199,35 @@ public class Source extends BaseSource {
         }
         return params;
     }
-    
+
+    /**
+     * 从Source中获取 col_key
+     * <p>
+     * json key: col_key
+     *
+     * @return
+     */
+    @JSONField(serialize = false)
+    public String getkeyValue(String key) {
+        if (null == config) {
+            return null;
+        }
+        String keyValue = null;
+        try {
+            JSONObject configObject = JSONObject.parseObject(this.config);
+            if (configObject != null && configObject.containsKey("properties")) {
+                JSONArray jsonArray = configObject.getJSONArray("properties");
+                if (jsonArray != null && !jsonArray.isEmpty()) {
+                    for(Dict col_key:jsonArray.toJavaList(Dict.class)){
+                        if (col_key.getKey().equals(key)) {
+                            keyValue = col_key.getValue();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("get col_key from source config, {}", e.getMessage());
+        }
+        return keyValue;
+    }
 }

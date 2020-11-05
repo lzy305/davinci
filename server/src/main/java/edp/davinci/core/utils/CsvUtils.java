@@ -28,6 +28,7 @@ import edp.core.utils.SqlUtils;
 import edp.davinci.core.enums.FileTypeEnum;
 import edp.davinci.core.enums.SqlColumnEnum;
 import edp.davinci.core.model.DataUploadEntity;
+import edp.davinci.model.User;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -51,15 +52,15 @@ public class CsvUtils {
      * @return
      * @throws ServerException
      */
-    public static DataUploadEntity parseCsvWithFirstAsHeader(MultipartFile csvFile, String charsetName) throws ServerException {
+    public static DataUploadEntity parseCsvWithFirstAsHeader(MultipartFile csvFile, String charsetName, User user) throws ServerException {
 
-        if (null == csvFile) {
-            throw new ServerException("Invalid csv file");
-        }
-
-        if (!csvFile.getOriginalFilename().toLowerCase().endsWith(FileTypeEnum.CSV.getType())) {
-            throw new ServerException("Invalid csv file");
-        }
+//        if (null == csvFile) {
+//            throw new ServerException("Invalid csv file");
+//        }
+//
+//        if (!csvFile.getOriginalFilename().toLowerCase().endsWith(FileTypeEnum.CSV.getType())) {
+//            throw new ServerException("Invalid csv file");
+//        }
 
         DataUploadEntity dataUploadEntity = null;
         BufferedReader reader = null;
@@ -89,10 +90,13 @@ public class CsvUtils {
                         for (String key : csvHeaders) {
                             item.put(key.replace("\uFEFF", EMPTY), SqlColumnEnum.formatValue(records.get(0).get(key), records.get(i).get(key)));
                         }
+                        //每行添加user_id
+                        item.put("user_id",user.getId());
                         values.add(item);
                     }
                 }
-
+                //headers加入user_id
+                headers.add(new QueryColumn("user_id","int"));
                 dataUploadEntity = new DataUploadEntity();
                 dataUploadEntity.setHeaders(headers);
                 dataUploadEntity.setValues(values);

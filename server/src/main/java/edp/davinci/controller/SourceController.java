@@ -294,7 +294,7 @@ public class SourceController extends BaseController {
      * @param request
      * @return
      */
-    @ApiOperation(value = "upload csv/excel file")
+    @ApiOperation(value = "上次文件")
     @PostMapping("{id}/upload{type}")
     public ResponseEntity uploadData(@PathVariable Long id,
                                      @PathVariable String type,
@@ -318,7 +318,13 @@ public class SourceController extends BaseController {
             ResultMap resultMap = new ResultMap(tokenUtils).failAndRefreshToken(request).message("upload file can not be EMPTY");
             return ResponseEntity.status(resultMap.getCode()).body(resultMap);
         }
-
+        // 获取文件名
+        String fileName = file.getOriginalFilename();
+        // 获取文件后缀
+        String prefix=fileName.substring(fileName.lastIndexOf(".")+1);
+        if(prefix.equals("xlsx")||prefix.equals("xls")){
+            type="excel";
+        }
         sourceService.dataUpload(id, sourceDataUpload, file, user, type);
         return ResponseEntity.ok(new ResultMap(tokenUtils).successAndRefreshToken(request));
     }

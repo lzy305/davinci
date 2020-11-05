@@ -279,7 +279,7 @@ const WidgetList: React.FC<RouteComponentWithParams> = (props) => {
             <Box.Header>
               <Box.Title>
                 <Icon type="bars" />
-                Widget List
+                图表列表
               </Box.Title>
               <Box.Tools>
                 <Tooltip placement="bottom" title="新增">

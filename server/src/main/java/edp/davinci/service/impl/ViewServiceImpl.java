@@ -71,8 +71,7 @@ import static edp.davinci.core.enums.SqlVariableTypeEnum.QUERYVAR;
 
 @Slf4j
 @Service("viewService")
-public class
-ViewServiceImpl extends BaseEntityService implements ViewService {
+public class ViewServiceImpl extends BaseEntityService implements ViewService {
 
     private static final Logger optLogger = LoggerFactory.getLogger(LogNameEnum.BUSINESS_OPERATION.getName());
 
@@ -135,7 +134,7 @@ ViewServiceImpl extends BaseEntityService implements ViewService {
             return null;
         }
 
-        List<ViewBaseInfo> views = viewMapper.getViewBaseInfoByProject(projectId);
+        List<ViewBaseInfo> views = viewMapper.getViewBaseInfoByProject(projectId, user.getId());
         if (null == views) {
             return null;
         }
@@ -767,7 +766,13 @@ ViewServiceImpl extends BaseEntityService implements ViewService {
                             if (null == sqlEntity.getQuaryParams()) {
                                 sqlEntity.setQuaryParams(new HashMap<>());
                             }
-                            sqlEntity.getQuaryParams().put(p.getName().trim(), SqlVariableValueTypeEnum.getValue(v.getValueType(), p.getValue(), v.isUdf()));
+                            /*author: yangjingrong date: 20201026*/
+                            /*sqlEntity.getQuaryParams().put(p.getName().trim(), SqlVariableValueTypeEnum.getValue(v.getValueType(), p.getValue(), v.isUdf()));*/
+                            if (p.getValue().indexOf(",") > 0 && p.getValue().indexOf("','") < 0) {
+                                sqlEntity.getQuaryParams().put(p.getName().trim(), SqlVariableValueTypeEnum.getValue(v.getValueType(), p.getValue().replace(",", "','"), v.isUdf()));
+                            } else {
+                                sqlEntity.getQuaryParams().put(p.getName().trim(), SqlVariableValueTypeEnum.getValue(v.getValueType(), p.getValue(), v.isUdf()));
+                            }
                         }
                     }
                 });
@@ -840,43 +845,20 @@ ViewServiceImpl extends BaseEntityService implements ViewService {
 
 
     private Set<String> getExcludeColumnsViaOneView(List<RelRoleView> roleViewList) {
-        if (CollectionUtils.isEmpty(roleViewList)) {
-            return null;
-        }
-
-        Set<String> columns = new HashSet<>();
-        boolean isFullAuth = false;
-        for (RelRoleView r : roleViewList) {
-            if (StringUtils.isEmpty(r.getColumnAuth())) {
-                isFullAuth = true;
-                break;
-            }
-
-            List<String> authColumns = JSONObject.parseArray(r.getColumnAuth(), String.class);
-            if (CollectionUtils.isEmpty(authColumns)) {
-                isFullAuth = true;
-                break;
-            }
-
-            columns.addAll(authColumns);
-        }
-
-        if (isFullAuth) {
-            return null;
-        }
-
-        for (RelRoleView r : roleViewList) {
-            List<String> authColumns = JSONObject.parseArray(r.getColumnAuth(), String.class);
-            Iterator<String> iterator = columns.iterator();
-            while (iterator.hasNext()) {
-                String column = iterator.next();
-                if (!authColumns.contains(column)) {
-                    iterator.remove();
+        if (!CollectionUtils.isEmpty(roleViewList)) {
+            Set<String> columns = new HashSet<>();
+            boolean isFullAuth = false;
+            for (RelRoleView r : roleViewList) {
+                if (!StringUtils.isEmpty(r.getColumnAuth())) {
+                    columns.addAll(JSONObject.parseArray(r.getColumnAuth(), String.class));
+                } else {
+                    isFullAuth = true;
+                    break;
                 }
             }
+            return isFullAuth ? null : columns;
         }
-
-        return columns.isEmpty() ? null : columns;
+        return null;
     }
 
 

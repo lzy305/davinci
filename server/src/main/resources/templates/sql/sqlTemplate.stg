@@ -19,30 +19,37 @@
 
 createTable(tableName, fields, primaryKeys, indexKeys)
 ::=<<
-CREATE TABLE `<tableName>` (
-    <fields:{field|`<field.name>` <field.type>};separator=",\n">
+CREATE TABLE <tableName> (
+    <fields:{field|<field.name> <field.type>};separator=",\n">
     <if(primaryKeys)>
     ,
-    PRIMARY KEY (<primaryKeys:{pk| `<pk>`};separator=",">)
+    PRIMARY KEY (<primaryKeys:{pk| <pk>};separator=",">)
     <endif>
     <if(indexKeys)>
     ,
-    <indexKeys:{idx|<idx.keys:{k|KEY `<k>` (`<idx.(k)>`)}>};separator=",\n">
+    <indexKeys:{idx|<idx.keys:{k|KEY <k> (<idx.(k)>)}>};separator=",\n">
     <endif>
-) DEFAULT CHARSET=utf8;
+);
 >>
 
 
 insertData(tableName, columns)
 ::=<<
 <if(columns)>
-INSERT INTO `<tableName>`
-(<columns:{item|<if(item.name)>`<item.name>`<endif>};separator=",">)
+INSERT INTO <tableName>
+(<columns:{item|<if(item.name)><item.name><endif>};separator=",">)
 VALUES
 (<columns:{item|<if(item.name)>?<endif>};separator=",">)
 <endif>
 >>
 
+deleteData(tableName,columns)
+::=<<
+<if(columns)>
+DELETE FROM <tableName> WHERE
+ <columns:{item|<if(item.name)><item.name> IN(?) <endif> }; separator=" AND ">
+<endif>
+>>
 
 queryAll(tableName, keywordPrefix, keywordSuffix)
 ::=<<

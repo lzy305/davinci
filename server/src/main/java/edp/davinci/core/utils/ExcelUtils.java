@@ -32,6 +32,9 @@ import edp.davinci.core.enums.NumericUnitEnum;
 import edp.davinci.core.enums.SqlColumnEnum;
 import edp.davinci.core.model.*;
 import edp.davinci.dto.viewDto.Param;
+import edp.davinci.model.User;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -59,7 +62,7 @@ public class ExcelUtils {
      * @param excelFile
      * @return
      */
-    public static DataUploadEntity parseExcelWithFirstAsHeader(MultipartFile excelFile) {
+    public static DataUploadEntity parseExcelWithFirstAsHeader(MultipartFile excelFile, User user) {
 
         if (null == excelFile) {
             throw new ServerException("Invalid excel file");
@@ -86,6 +89,7 @@ public class ExcelUtils {
             //列
             Row headerRow = sheet.getRow(0);
             Row typeRow = sheet.getRow(1);
+            Row headercnRow = sheet.getRow(2);
 
             List<Map<String, Object>> values = null;
             Set<QueryColumn> headers = new HashSet<>();
@@ -103,16 +107,33 @@ public class ExcelUtils {
             }
 
             values = new ArrayList<>();
-            for (int i = 2; i <= sheet.getLastRowNum(); i++) {
+            for (int i = 3; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 Map<String, Object> item = new HashMap<>();
                 for (int j = 0; j < headerRow.getLastCellNum(); j++) {
-                    item.put(headerRow.getCell(j).getStringCellValue(),
-                            SqlColumnEnum.formatValue(typeRow.getCell(j).getStringCellValue(), row.getCell(j).getStringCellValue()));
+                    if(row.getCell(j).getCellType()==0&&row.getCell(j)!=null){
+                        if(HSSFDateUtil.isCellDateFormatted(row.getCell(j))){
+                            //日期格式
+                            Date date = row.getCell(j).getDateCellValue();
+                            String value = DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
+                            item.put(headerRow.getCell(j).getStringCellValue(), SqlColumnEnum.formatValue(typeRow.getCell(j).getStringCellValue(), value));
+                        }else{
+                            //数字格式
+                            row.getCell(j).setCellType(Cell.CELL_TYPE_STRING);
+                            item.put(headerRow.getCell(j).getStringCellValue(), SqlColumnEnum.formatValue(typeRow.getCell(j).getStringCellValue(), row.getCell(j).getStringCellValue()));
+                        }
+                    }else{
+                        //文本格式
+                        item.put(headerRow.getCell(j).getStringCellValue(), SqlColumnEnum.formatValue(typeRow.getCell(j).getStringCellValue(), row.getCell(j).getStringCellValue()));
+                    }
                 }
+                //每行添加user_id
+                item.put("user_id",user.getId());
                 values.add(item);
             }
 
+            //headers加入user_id
+            headers.add(new QueryColumn("user_id","int"));
             dataUploadEntity = new DataUploadEntity();
             dataUploadEntity.setHeaders(headers);
             dataUploadEntity.setValues(values);
@@ -147,15 +168,12 @@ public class ExcelUtils {
 
 
     /**
-     *
      * 写入数据到excel sheet页
      *
      * @param sheet
      * @param columns
      * @param dataList
      * @param workbook
-     * @param containType
-     * @param widgetConfig
      * @param params
      */
     public static void writeSheet(Sheet sheet,
@@ -163,7 +181,7 @@ public class ExcelUtils {
                                   List<Map<String, Object>> dataList,
                                   SXSSFWorkbook workbook,
                                   boolean containType,
-                                  String widgetConfig,
+                                  String json,
                                   List<Param> params) {
 
 
@@ -189,13 +207,13 @@ public class ExcelUtils {
         headerCellStyle.setAlignment(CellStyle.ALIGN_CENTER);
         headerCellStyle.setVerticalAlignment(CellStyle.VERTICAL_CENTER);
 
-        boolean isTable = isTable(widgetConfig);
+        boolean isTable = isTable(json);
 
         ScriptEngine engine = null;
         List<ExcelHeader> excelHeaders = null;
         if (isTable) {
             try {
-                excelHeaders = formatHeader(widgetConfig, params);
+                excelHeaders = formatHeader(json, params);
             } catch (Exception e) {
                 e.printStackTrace();
             }

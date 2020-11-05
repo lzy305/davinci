@@ -134,7 +134,7 @@ public class SourceServiceImpl extends BaseEntityService implements SourceServic
             return null;
         }
 
-        List<Source> sources = sourceMapper.getByProject(projectId);
+        List<Source> sources = sourceMapper.getByProject(projectId, user.getId());
 
         if (!CollectionUtils.isEmpty(sources)) {
             ProjectPermission projectPermission = projectService.getProjectPermission(projectDetail, user);
@@ -420,23 +420,23 @@ public class SourceServiceImpl extends BaseEntityService implements SourceServic
 
         Source source = getSource(sourceId);
 
-        checkWritePermission(entity, source.getProjectId(), user, "upload csv file in");
+        checkWritePermission(entity, source.getProjectId(), user, "upload excel file in");
 
-        try {
-            boolean tableIsExist = sqlUtils.init(source).tableIsExist(uploadMeta.getTableName());
-            if (uploadMeta.getMode() == UploadModeEnum.NEW.getMode()) {
-                if (tableIsExist) {
-                    throw new ServerException("table " + uploadMeta.getTableName() + " is already exist");
-                }
-            } else {
-                if (!tableIsExist) {
-                    throw new ServerException("table " + uploadMeta.getTableName() + " is not exist");
-                }
-            }
-        } catch (SourceException e) {
-            log.error(e.getMessage());
-            throw new ServerException(e.getMessage());
-        }
+//        try {
+//            boolean tableIsExist = sqlUtils.init(source).tableIsExist(uploadMeta.getTableName());
+//            if (uploadMeta.getMode() == UploadModeEnum.NEW.getMode()) {
+//                if (tableIsExist) {
+//                    throw new ServerException("table " + uploadMeta.getTableName() + " is already exist");
+//                }
+//            } else {
+//                if (!tableIsExist) {
+//                    throw new ServerException("table " + uploadMeta.getTableName() + " is not exist");
+//                }
+//            }
+//        } catch (SourceException e) {
+//            log.error(e.getMessage());
+//            throw new ServerException(e.getMessage());
+//        }
     }
 
     /**
@@ -464,33 +464,33 @@ public class SourceServiceImpl extends BaseEntityService implements SourceServic
         }
 
         // 校验文件是否csv文件
-        if (type.equals(FileTypeEnum.CSV.getType()) && !FileUtils.isCsv(file)) {
-            throw new ServerException("Please upload csv file");
-        }
-
-        if (type.equals(FileTypeEnum.XLSX.getType()) && !FileUtils.isExcel(file)) {
-            throw new ServerException("Please upload excel file");
-        }
+//        if (type.equals(FileTypeEnum.CSV.getType()) && !FileUtils.isCsv(file)) {
+//            throw new ServerException("Please upload csv file");
+//        }
+//
+//        if (type.equals(FileTypeEnum.XLSX.getType()) && !FileUtils.isExcel(file)) {
+//            throw new ServerException("Please upload excel file");
+//        }
 
         DataTypeEnum dataTypeEnum = DataTypeEnum.urlOf(source.getJdbcUrl());
-        if (dataTypeEnum != DataTypeEnum.MYSQL) {
-            log.info("Unsupported data source, {}", source.getJdbcUrl());
-            throw new ServerException("Unsupported data source: " + source.getJdbcUrl());
-        }
+//        if (dataTypeEnum != DataTypeEnum.MYSQL) {
+//            log.info("Unsupported data source， {}", source.getJdbcUrl());
+//            throw new ServerException("Unsupported data source: " + source.getJdbcUrl());
+//        }
 
         try {
             DataUploadEntity dataUploadEntity = null;
             if (type.equals(FileTypeEnum.CSV.getType())) {
                 // 解析csv文件
-                dataUploadEntity = CsvUtils.parseCsvWithFirstAsHeader(file, "UTF-8");
+                dataUploadEntity = CsvUtils.parseCsvWithFirstAsHeader(file, "UTF-8", user);
             } else {
                 // 解析excel文件
-                dataUploadEntity = ExcelUtils.parseExcelWithFirstAsHeader(file);
+                dataUploadEntity = ExcelUtils.parseExcelWithFirstAsHeader(file, user);
             }
 
             if (null != dataUploadEntity && !CollectionUtils.isEmpty(dataUploadEntity.getHeaders())) {
                 // 建表
-                createTable(dataUploadEntity.getHeaders(), sourceDataUpload, source);
+//                createTable(dataUploadEntity.getHeaders(), sourceDataUpload, source);
                 // 传输数据
                 insertData(dataUploadEntity.getHeaders(), dataUploadEntity.getValues(), sourceDataUpload, source);
             }
@@ -751,24 +751,41 @@ public class SourceServiceImpl extends BaseEntityService implements SourceServic
         if (CollectionUtils.isEmpty(values)) {
             return;
         }
-
+        String tableName=source.getkeyValue("table_name");
+        String colKey=source.getkeyValue("col_key");
         SqlUtils sqlUtils = this.sqlUtils.init(source);
 
         try {
             if (sourceDataUpload.getMode() == UploadModeEnum.COVER.getMode() || sourceDataUpload.getMode() == UploadModeEnum.REPLACE.getMode()) {
                 // 清空表
-                sqlUtils.jdbcTemplate().execute("Truncate table `" + sourceDataUpload.getTableName() + "`");
+                //sqlUtils.jdbcTemplate().execute("Truncate table `" + sourceDataUpload.getTableName() + "`");
+                sqlUtils.jdbcTemplate().execute("Truncate table " + tableName + "");
                 // 插入数据
-                executeInsert(sourceDataUpload.getTableName(), headers, values, sqlUtils);
-            } else {
-                boolean tableIsExist = sqlUtils.tableIsExist(sourceDataUpload.getTableName());
-                if (tableIsExist) {
-                    executeInsert(sourceDataUpload.getTableName(), headers, values, sqlUtils);
-                } else {
-                    throw new ServerException("table " + sourceDataUpload.getTableName() + " is not exist");
-                }
+                //executeInsert(sourceDataUpload.getTableName(), headers, values, sqlUtils);
+                executeInsert(tableName, headers, values, sqlUtils);
             }
-        } catch (ServerException e) {
+            //更新数据（先删后增） if (sourceDataUpload.getMode() == UploadModeEnum.UPDATE.getMode())
+            else  {
+                // 插入数据
+                //executeInsert(sourceDataUpload.getTableName(), headers, values, sqlUtils);
+                if (colKey != null && colKey.length() != 0) {
+                    deleteData(tableName, headers, values, sqlUtils, colKey);
+                }
+                executeInsert(tableName, headers, values, sqlUtils);
+            }
+
+            // else {
+            //     //boolean tableIsExist = sqlUtils.tableIsExist(sourceDataUpload.getTableName());
+            //     boolean tableIsExist = sqlUtils.tableIsExist(tableName);
+            //     if (tableIsExist) {
+            //         //executeInsert(sourceDataUpload.getTableName(), headers, values, sqlUtils);
+            //         executeInsert(tableName, headers, values, sqlUtils);
+            //     } else {
+            //         //throw new ServerException("table " + sourceDataUpload.getTableName() + " is not exist");
+            //         throw new ServerException("table " + tableName + " is not exist");
+            //     }
+            //
+        }  catch (ServerException e) {
             e.printStackTrace();
             throw new ServerException(e.getMessage());
         }
@@ -838,5 +855,32 @@ public class SourceServiceImpl extends BaseEntityService implements SourceServic
             }
         }
     }
-
+    //删除数据组装sql语句
+    private void deleteData(String tableName, Set<QueryColumn> headers, List<Map<String, Object>> values, SqlUtils sqlUtils, String colKey) throws ServerException {
+        List<String> keyList= Arrays.asList(colKey.split(","));
+        Set<QueryColumn> keyHeaders=new HashSet<>();
+        List<Map<String, Object>> keyValue= new ArrayList<>();;
+        for (QueryColumn queryColumn : headers) {
+            for (String col_key : keyList) {
+                if (queryColumn.getName().equals(col_key)) {
+                    keyHeaders.add(new QueryColumn(queryColumn.getName(), queryColumn.getType()));
+                }
+            }
+        }
+        for (Map<String, Object> map : values) {
+            Map<String, Object> item = new HashMap<>();
+            for(String col_key: keyList) {
+                item.put(col_key,map.get(col_key));
+            }
+            keyValue.add(item);
+        }
+        STGroup stg = new STGroupFile(Constants.SQL_TEMPLATE);
+        ST st = stg.getInstanceOf("deleteData");
+        st.add("tableName", tableName);
+        st.add("columns", keyHeaders);
+        String deleteSql = st.render();
+        log.info("deleteSql : {}", st.render());
+        //每一万进行一次删除
+        sqlUtils.executeBatch(deleteSql, keyHeaders, keyValue);
+    }
 }

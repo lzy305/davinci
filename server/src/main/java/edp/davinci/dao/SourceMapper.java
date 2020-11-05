@@ -56,8 +56,19 @@ public interface SourceMapper {
     @Select({"select id from `source` where project_id = #{projectId} and name = #{name}"})
     Long getByNameWithProjectId(@Param("name") String name, @Param("projectId") Long projectId);
 
-    @Select({"select * from `source` where project_id = #{projectId}"})
-    List<Source> getByProject(@Param("projectId") Long projectId);
+    @Select({"select * from `source` where project_id = #{projectId} and id not in (select  rrs.source_id\n" +
+            "  from rel_role_user rru,\n" +
+            "       rel_role_source rrs\n" +
+            "where rru.role_id = rrs.role_id\n" +
+            "  and  rru.user_id = #{userId}\n" +
+            "group by  rrs.source_id having count(*) = (select count(*) as roles\n" +
+            "  from rel_role_project rrp ,\n" +
+            "       rel_role_user rru\n" +
+            "where rrp.role_id = rru.role_id\n" +
+            " and rrp.role_id = rru.role_id\n" +
+            " and  rru.user_id = #{userId}\n" +
+            " and rrp.project_id = #{projectId}))"})
+    List<Source> getByProject(@Param("projectId") Long projectId,  @Param("userId") Long userId);
 
     @Select({
             "SELECT s.id, s.`name`, s.`type`, s.`config`,",

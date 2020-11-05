@@ -19,7 +19,29 @@
 
 package edp.core.utils;
 
+import static edp.core.consts.Consts.AT_SYMBOL;
+import static edp.core.consts.Consts.COLON;
+import static edp.core.consts.Consts.DOUBLE_SLASH;
+import static edp.core.consts.Consts.EMPTY;
+import static edp.core.consts.Consts.JDBC_DATASOURCE_DEFAULT_VERSION;
+import static edp.core.consts.Consts.JDBC_PREFIX_FORMATTER;
+import static edp.core.consts.Consts.NEW_LINE_CHAR;
+import static edp.core.consts.Consts.PATTERN_JDBC_TYPE;
+import static edp.core.consts.Consts.SPACE;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+
+import javax.sql.DataSource;
+
 import com.alibaba.druid.util.StringUtils;
+
 import edp.core.common.jdbc.ExtendedJdbcClassLoader;
 import edp.core.common.jdbc.JdbcDataSource;
 import edp.core.consts.Consts;
@@ -31,18 +53,6 @@ import edp.core.model.JdbcSourceInfo;
 import edp.davinci.runner.LoadSupportDataSourceRunner;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.sql.DataSource;
-import java.io.File;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
-
-import static edp.core.consts.Consts.*;
 
 @Slf4j
 public class SourceUtils {
@@ -156,9 +166,9 @@ public class SourceUtils {
 
     public static boolean checkDriver(String dataSourceName, String jdbcUrl, String version, boolean isExt) {
 
-    	if (StringUtils.isEmpty(dataSourceName) || !LoadSupportDataSourceRunner.getSupportDatasourceMap().containsKey(dataSourceName)) {
-            throw new SourceException("Not supported data type: jdbcUrl=" + jdbcUrl);
-        }
+//    	if (StringUtils.isEmpty(dataSourceName) || !LoadSupportDataSourceRunner.getSupportDatasourceMap().containsKey(dataSourceName)) {
+//            throw new SourceException("Not supported data type: jdbcUrl=" + jdbcUrl);
+//        }
         
 		if (isExt && !StringUtils.isEmpty(version) && !JDBC_DATASOURCE_DEFAULT_VERSION.equals(version)) {
 			String path = System.getenv("DAVINCI3_HOME") + File.separator
@@ -196,9 +206,9 @@ public class SourceUtils {
         if (StringUtils.isEmpty(dataSourceName)) {
             throw new SourceException("Not supported data type: jdbcUrl=" + jdbcUrl);
         }
-        if (!LoadSupportDataSourceRunner.getSupportDatasourceMap().containsKey(dataSourceName)) {
-            throw new SourceException("Not supported data type: jdbcUrl=" + jdbcUrl);
-        }
+//        if (!LoadSupportDataSourceRunner.getSupportDatasourceMap().containsKey(dataSourceName)) {
+//            throw new SourceException("Not supported data type: jdbcUrl=" + jdbcUrl);
+//        }
 
         String urlPrefix = String.format(JDBC_PREFIX_FORMATTER, dataSourceName);
         String checkUrl = jdbcUrl.replaceFirst(DOUBLE_SLASH, EMPTY).replaceFirst(AT_SYMBOL, EMPTY);
@@ -211,7 +221,7 @@ public class SourceUtils {
 
     public static String getDataSourceName(String jdbcUrl) {
         String dataSourceName = null;
-        jdbcUrl = jdbcUrl.replaceAll(NEW_LINE_CHAR, EMPTY).replaceAll(SPACE, EMPTY).trim();
+        jdbcUrl = jdbcUrl.replaceAll(NEW_LINE_CHAR, EMPTY).replaceAll(SPACE, EMPTY).trim().toLowerCase();
         Matcher matcher = PATTERN_JDBC_TYPE.matcher(jdbcUrl);
         if (matcher.find()) {
             dataSourceName = matcher.group().split(COLON)[1];

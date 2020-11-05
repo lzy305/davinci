@@ -303,7 +303,7 @@ export class ViewList extends React.PureComponent<IViewListProps, IViewListState
               <Box.Header>
                 <Box.Title>
                   <Icon type="bars" />
-                  View List
+                  数据集
                 </Box.Title>
                 <Box.Tools>
                   <Tooltip placement="bottom" title="新增">

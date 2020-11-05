@@ -99,13 +99,23 @@ public class SqlFilter {
         if(criterion.isSingleValue()){
             //column='value'
             String value = criterion.getValue().toString();
-            whereClause.append(criterion.getColumn() + Consts.SPACE + criterion.getOperator() + Consts.SPACE);
-            if(criterion.isNeedApostrophe() && !Pattern.matches(pattern, value)){
-                whereClause.append(Consts.APOSTROPHE + value + Consts.APOSTROPHE);
-            }else{
-                whereClause.append(value);
+            //in语句加入左右括号
+            if(criterion.getOperator().equals("in")){
+                whereClause.append(criterion.getColumn() + Consts.SPACE + criterion.getOperator() + Consts.SPACE+Consts.PARENTHESES_START);
+                //字段值加入单引号
+                if(criterion.isNeedApostrophe() && !Pattern.matches(pattern, value)){
+                    whereClause.append(Consts.APOSTROPHE + value.replace(",","','") + Consts.APOSTROPHE+Consts.PARENTHESES_END);
+                }else{
+                    whereClause.append(value.replace(",","','")+Consts.PARENTHESES_END);
+                }
+            } else {
+                whereClause.append(criterion.getColumn() + Consts.SPACE + criterion.getOperator() + Consts.SPACE);
+                if (criterion.isNeedApostrophe() && !Pattern.matches(pattern, value)) {
+                    whereClause.append(Consts.APOSTROPHE + value + Consts.APOSTROPHE);
+                } else {
+                    whereClause.append(value);
+                }
             }
-
         }else if(criterion.isBetweenValue()){
             //column>='' and column<=''
             String value1 = criterion.getValue().toString();

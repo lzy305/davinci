@@ -82,9 +82,20 @@ public interface ViewMapper {
             "select v.id, v.`name`, v.`description`, s.name as 'sourceName'",
             "from `view` v ",
             "left join source s on s.id = v.source_id ",
-            "where v.project_id = #{projectId}"
+            "where v.project_id = #{projectId}",
+            "union all ",
+            "select v2.id, v2.`name`, '共享', s.name as 'sourceName'",
+            "from view v2, ",
+            "rel_role_user rru, ",
+            "share_view_info svi, ",
+            "source s ",
+            "where v2.id = svi.view_id ",
+            "and rru.role_id = svi.role_id ",
+            "and v2.source_id = s.id ",
+            "and #{projectId} in (select id from project where create_by = #{userId}) ",
+            "and rru.user_id  = #{userId}"
     })
-    List<ViewBaseInfo> getViewBaseInfoByProject(@Param("projectId") Long projectId);
+    List<ViewBaseInfo> getViewBaseInfoByProject(@Param("projectId") Long projectId, @Param("userId") Long userId);
 
     int insertBatch(@Param("list") List<View> sourceList);
 
